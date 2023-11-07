@@ -19,7 +19,7 @@
 You can install the library using Cargo with the following command:
 
 ```bash
-$ cargo add reacher
+cargo add reacher
 ```
 
 
