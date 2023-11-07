@@ -1,8 +1,4 @@
-use std::{
-    cmp,
-    path::Path,
-    sync::mpsc::{self, Sender}
-};
+use std::{cmp, path::Path, path::PathBuf, sync};
 
 use crate::{filter::FilterType, utils};
 use ignore::{WalkBuilder, WalkState};
@@ -56,18 +52,18 @@ impl Search {
         };
 
         if ignore_case {
-            formatted_si = "(?i)".to_owned() + formatted_si
+            formatted_si = "(?i)".to_owned() + &*formatted_si
         }
 
         let si = Regex::new(&formatted_si).unwrap();
 
         let mut walker = WalkBuilder::new(search_location);
 
-        wallker
+        walker
             .hidden(!hidden)
             .git_ignore(true)
             .max_depth(depth)
-            .threads(cmp::min(12, num_cpus::get()))
+            .threads(cmp::min(12, num_cpus::get()));
 
         walker.filter_entry(move |dir| filters.iter().all(|f| f.apply(dir)));
 
@@ -77,7 +73,7 @@ impl Search {
             }
         }
 
-        let (tx, rx) = mspc::channel::<String>(); // Threading
+        let (tx, rx) = sync::mpsc::channel::<String>(); // Threading
         walker.build_parallel().run(|| {
             let tx = tx.clone();
             let reg_exp = si.clone();
@@ -100,7 +96,7 @@ impl Search {
                         }
                     }
                 }
-                WalkSate::Continue
+                WalkState::Continue
             })
         });
 
@@ -115,6 +111,20 @@ impl Search {
         }
     }
 }
+
+pub struct SearchBuilder {
+    search_location: PathBuf,
+    more_locations: Option<Vec<PathBuf>>,
+    search_input: Option<String>,
+    file_ext: Option<String>,
+    depth: Option<usize>,
+    limit: Option<usize>,
+    strict: bool,
+    ignore_case: bool,
+    hidden: bool,
+    filters: Vec<FilterType>,
+}
+
 impl SearchBuilder {
     #[allow(deprecated)]
     pub fn build(&self) -> Search {
@@ -163,7 +173,7 @@ impl SearchBuilder {
     }
 
     pub const fn strict(mut self) -> Self {
-        self.strict = True;
+        self.strict = true;
         self
     }
 

@@ -1,7 +1,6 @@
+use super::SearchBuilder;
 use ignore::DirEntry;
-use std::time::SystemTime;
-use super::convert;
-
+use std::{cmp::Ordering, time::SystemTime};
 pub type FilterFn = fn(&DirEntry) -> bool; // Initialize type that represents function that returns bool
 
 pub enum FilterType {
@@ -33,6 +32,9 @@ pub trait FilterExt {
     fn custom_filter(self, f: FilterFn) -> Self;
 }
 
+fn convert(b: f64, pow: u32) -> u64 {
+    (b * 1024_u64.pow(pow) as f64) as u64
+}
 #[allow(clippy::from_over_into)] // Removes warning suggesting conversion to From<>
 impl Into<u64> for FileSize {
     fn into(self) -> u64 {
